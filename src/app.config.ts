@@ -1,7 +1,7 @@
 export default defineAppConfig({
   pages: [
     'pages/index/index',
-    // 'pages/fate/index',
+    'pages/swiper/index',
     // 'pages/fate/fate',
     'pages/webview/index',
   ],
