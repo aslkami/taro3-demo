@@ -34,9 +34,6 @@ export default function Swiper({
     touch.move(e);
     // const delta = touch.getDelta().deltaX;
     // swiperItemRef[0].translateX(delta);
-    if (!catchMove.current) {
-      catchMove.current = true;
-    }
   };
 
   const onTouchEnd = () => {
@@ -70,13 +67,11 @@ export default function Swiper({
       swiperItemRef[0]?.addClass("second-reverse");
       swiperItemRef[1]?.addClass("third-reverse");
       cardList.unshift(lastRemoveCard);
+      setCardList([...cardList]);
+
       new Promise((resolve) => {
         setTimeout(() => {
-          if (catchMove.current) {
-            catchMove.current = false;
-          }
           setCurrent(current - 1);
-          setCardList([...cardList]);
           setRemoveCardList([...removeCardList]);
           isAnimating.current = false;
           resolve("reset");
@@ -98,9 +93,6 @@ export default function Swiper({
           swiperItemRef[2]?.addClass("third");
           new Promise((resolve) => {
             setTimeout(() => {
-              if (catchMove.current) {
-                catchMove.current = false;
-              }
               setCurrent(current + 1);
               const removeCard = cardList.shift();
               removeCardList.push(removeCard);
