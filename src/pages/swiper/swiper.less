@@ -17,7 +17,9 @@
     // z-index: -1;
     user-select: none;
     pointer-events: auto;
-    opacity: 0;
+    opacity: 1;
+    -webkit-overflow-scrolling: touch;
+    // will-change: transform, opacity, z-index;
   }
 
   .swiper-item-container.moveNext {
@@ -25,21 +27,21 @@
     transform: translateX(-100%);
   }
 
-  .swiper-item-container:nth-child(1) {
-    transform: translateX(0);
-    z-index: 3;
-    opacity: 1;
-  }
-  .swiper-item-container:nth-child(2) {
-    transform: scale(0.9) translate3d(0, 0, -50px);
-    z-index: 2;
-    opacity: 1;
-  }
-  .swiper-item-container:nth-child(3) {
-    transform: scale(0.8) translate3d(0, 0, -100px);
-    z-index: 1;
-    opacity: 1;
-  }
+  // .swiper-item-container:nth-child(1) {
+  //   transform: translateX(0);
+  //   z-index: 3;
+  //   opacity: 1;
+  // }
+  // .swiper-item-container:nth-child(2) {
+  //   transform: scale(0.9) translate3d(0, 0, -50px);
+  //   z-index: 2;
+  //   opacity: 1;
+  // }
+  // .swiper-item-container:nth-child(3) {
+  //   transform: scale(0.8) translate3d(0, 0, -100px);
+  //   z-index: 1;
+  //   opacity: 1;
+  // }
 
   .swiper-item-container.first {
     // transform: translateX(-100%);

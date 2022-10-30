@@ -2,11 +2,13 @@ import React, { useEffect, useState, useRef } from "react";
 import { View, Swiper, SwiperItem } from "@tarojs/components";
 
 import Taro, { useDidShow, useDidHide, useReady } from "@tarojs/taro";
+import cloneDeep from "lodash.clonedeep";
 
-import Echarts from "taro-react-echarts";
+import Echarts from "../../TaroEcharts";
 import "./index.less";
 
 import echartjs from "./echarts";
+import Fate from "./../../Components/Fate";
 
 function Grandfather() {
   const [options, setEchartsOptions] = useState({});
@@ -85,9 +87,7 @@ function Grandfather() {
         },
       ],
     };
-    setTimeout(() => {
-      setEchartsOptions(option);
-    }, 1000);
+    setEchartsOptions(option);
   }, []);
 
   useReady(() => {
@@ -141,20 +141,89 @@ function Father({ ...args }) {
 }
 
 function GrandSon({ ...args }) {
+  const [key, setKey] = useState();
+
   useReady(() => {
     console.log("GrandSon, useReady");
   });
 
-  return <EchartsComponent {...args}></EchartsComponent>;
+  useEffect(() => {
+    console.log(13131314, key);
+    const randomKey = Math.random()
+      .toString(36)
+      .substring(7)
+      .split("")
+      .join(".");
+    setKey(randomKey);
+  }, []);
+
+  return (
+    <>
+      {/* <Fate /> */}
+      <EchartsComponent {...args}></EchartsComponent>
+    </>
+  );
 }
 
+const genKey = () => {
+  return Math.random().toString(36).substring(7).split("").join(".");
+};
+
 function EchartsComponent({ ...args }) {
+  const ref = useRef();
+  const [key, setKey] = useState();
+  const [, forceUpdate] = useState({});
+  const [isMounted, setIsMounted] = useState(false);
+  const [canvasId, setCanvasId] = useState(genKey());
+
+  useEffect(() => {
+    // console.log(args.option, "useEffect==========");
+    // console.log(ref.current, "nextick111");
+    // Taro.nextTick(() => {
+    //   Taro.nextTick(() => {
+    //     console.log(ref.current, "nextick222");
+    //     if (!ref.current) {
+    //       const randomKey = Math.random()
+    //         .toString(36)
+    //         .substring(7)
+    //         .split("")
+    //         .join(".");
+    //       setKey(randomKey);
+    //       console.log(cloneDeep(options) === options);
+    //     } else {
+    //       ref.current.setOption(options);
+    //     }
+    //   });
+    // });
+    Taro.nextTick(() => {
+      setTimeout(() => {
+        setIsMounted(true);
+        console.log("nextTick isMounted");
+      }, 2000);
+    });
+  }, []);
+
+  // if (Reflect.ownKeys(args.option).length === 0) {
+  //   return null;
+  // }
+  console.log(args.option, "__________________________");
+
   return (
     <Echarts
       style={{ width: "375px", height: "300px" }}
+      ref={ref}
       echarts={echartjs}
-      {...args}
+      option={args.option}
+      notMerge
+      isPage={false}
       // option={option}
+      onChartReady={(ins) => {
+        console.log(ins, "echarts实例");
+        // ref.current = ins;
+        console.log(args.option, "echarts实例?????????????????");
+        ins?.setOption(args.option, true, true);
+        // setIsMounted(true);
+      }}
     ></Echarts>
   );
 }

@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
-import { View, ScrollView } from "@tarojs/components";
+import { View, ScrollView, MovableView, MovableArea } from "@tarojs/components";
+import Taro from "@tarojs/taro";
 import "./swiper.less";
 import useRefs from "./hooks/useRefs";
 import useTouch from "./hooks/useTouch";
@@ -9,122 +10,189 @@ type PropsSwiper = {
   children: React.ReactNode;
   swiperOffset?: number;
   onLast?: () => void;
+  showNum: number;
 };
 
 export default function Swiper({
   showIndicatorDot = true,
   children,
-  swiperOffset = 30,
+  swiperOffset = 50,
   onLast = () => {},
+  showNum = 3,
 }) {
-  const [current, setCurrent] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [swiperItemRef, setSwiperItemRefs] = useRefs();
-  const [cardList, setCardList] = useState<any[]>(children);
-  const [removeCardList, setRemoveCardList] = useState<any[]>([]);
   const touch = useTouch();
-  const isAnimating = useRef(false);
-  const catchMove = useRef(false);
+  const swipeDirection = useRef("");
+  const itemCount = React.Children.count(children);
+  const translateOffset = 50;
+  const scaleRatio = 0.1;
+  const maxZIndex = itemCount + 1;
+  const end = Math.min(currentIndex + showNum, itemCount);
+  const [, forceUpdate] = useState({});
 
   const onTouchStart = (e) => {
     touch.start(e);
   };
 
   const onTouchMove = (e) => {
-    e.preventDefault();
+    // e.preventDefault();
     touch.move(e);
-    // const delta = touch.getDelta().deltaX;
-    // swiperItemRef[0].translateX(delta);
+    const delta = touch.getDelta().deltaX;
+    if (delta < 0) {
+      if (currentIndex === itemCount - 1) return;
+      if (swipeDirection.current === "right") return;
+      swipeDirection.current = "left";
+      const swiperDelta = delta > 0 ? 0 : delta;
+      swiperItemRef[currentIndex].translatingX(swiperDelta);
+    } else {
+      if (currentIndex === 0) return;
+      if (swipeDirection.current === "left") return;
+      swipeDirection.current = "right";
+      const width = swiperItemRef[currentIndex - 1].getWidth();
+      // const swiperDelta = delta >= width * 1.5 ? 0 : `calc(-150% + ${delta}px)`;
+      const swiperDelta = delta >= width * 1.5 ? 0 : -width + delta;
+      swiperItemRef[currentIndex - 1].translatingX(swiperDelta);
+    }
   };
 
   const onTouchEnd = () => {
     const { deltaX, deltaY } = touch.end();
     if (Math.abs(deltaY) >= swiperOffset + 20) return;
-    if (Math.abs(deltaX) <= swiperOffset) return;
+    // if (Math.abs(deltaX) <= swiperOffset) return;
 
-    if (deltaX < -swiperOffset) {
-      if (cardList.length > 1) {
+    swiperItemRef.forEach((ref) => {
+      ref.reset();
+    });
+
+    if (deltaX < 0) {
+      if (currentIndex === itemCount - 1) return;
+
+      if (Math.abs(deltaX) >= swiperOffset) {
         onNext();
       } else {
-        onLast?.();
+        swiperItemRef[currentIndex].translateX(0);
+        forceUpdate({});
       }
     } else {
-      if (removeCardList.length > 0) {
+      if (currentIndex === 0) return;
+
+      if (Math.abs(deltaX) >= 80) {
         onPrev();
+      } else {
+        swiperItemRef[currentIndex - 1].translateX("-150%");
+        forceUpdate({});
       }
     }
+
+    swipeDirection.current = "";
+  };
+
+  const onFinish = (index) => {
+    setCurrentIndex(index);
+    // swiperItemRef.forEach((ref) => {
+    //   ref.clear();
+    // });
+  };
+
+  const getAnimateStyle = (index) => {
+    const translate =
+      "-" + Taro.pxTransform((index - currentIndex) * translateOffset);
+    const scale = 1 - (index - currentIndex) * scaleRatio;
+    return {
+      translate,
+      scale,
+    };
   };
 
   const onPrev = () => {
-    if (isAnimating.current) return;
-    isAnimating.current = true;
-    swiperItemRef.forEach((item) => item?.clearClass());
-
-    requestAnimationFrame(() => {
-      let lastRemoveCard = removeCardList.pop();
-      lastRemoveCard = React.cloneElement(lastRemoveCard, {
-        className: "first-reverse",
-      });
-      swiperItemRef[0]?.addClass("second-reverse");
-      swiperItemRef[1]?.addClass("third-reverse");
-      cardList.unshift(lastRemoveCard);
-      setCardList([...cardList]);
-
-      new Promise((resolve) => {
-        setTimeout(() => {
-          setCurrent(current - 1);
-          setRemoveCardList([...removeCardList]);
-          isAnimating.current = false;
-          resolve("reset");
-        }, 350);
-      });
+    let idx = currentIndex;
+    swiperItemRef[idx - 1].translateX(0);
+    swiperItemRef[idx].transformZ({
+      translate: `${Taro.pxTransform(translateOffset)}`,
+      scale: 0.9,
     });
+    let count = 0;
+    while (idx < end) {
+      if (count++ === showNum - 1) break;
+
+      const { translate, scale } = getAnimateStyle(idx + 1);
+      swiperItemRef[idx].transformZ({ translate, scale });
+      idx++;
+    }
+
+    onFinish(currentIndex - 1);
   };
 
   const onNext = () => {
-    if (isAnimating.current) return;
-    isAnimating.current = true;
-    swiperItemRef.forEach((item) => item?.clearClass());
+    let idx = currentIndex;
+    while (idx < end) {
+      if (idx === currentIndex) {
+        swiperItemRef[idx].translateX("-150%");
+      } else {
+        const { translate, scale } = getAnimateStyle(idx - 1);
+        swiperItemRef[idx].transformZ({ translate, scale });
+      }
+      idx++;
+    }
 
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          swiperItemRef[0]?.addClass("first");
-          swiperItemRef[1]?.addClass("second");
-          swiperItemRef[2]?.addClass("third");
-          new Promise((resolve) => {
-            setTimeout(() => {
-              setCurrent(current + 1);
-              const removeCard = cardList.shift();
-              removeCardList.push(removeCard);
-              setRemoveCardList([...removeCardList]);
-              setCardList([...cardList]);
-              isAnimating.current = false;
-              swiperItemRef.forEach((item) => item?.clearClass());
-              resolve("reset");
-            }, 350);
-          });
-        });
-      });
-    });
+    onFinish(currentIndex + 1);
   };
 
-  console.log(catchMove.current, "==========");
+  const initStyle = (index): React.CSSProperties => {
+    const baseStyle = {
+      zIndex: maxZIndex - index,
+    };
+    if (index < end && index >= currentIndex) {
+      const { translate, scale } = getAnimateStyle(index);
+      return {
+        ...baseStyle,
+        transform: `translate3d(0, 0, ${translate}) scale(${scale})`,
+        opacity: 1,
+      };
+    } else if (index >= end) {
+      return {
+        ...baseStyle,
+        opacity: 0.01,
+      };
+    }
+
+    return baseStyle;
+  };
+
+  // useEffect(() => {
+  //   const el = document.getElementById("swiper-container");
+  //   const handler = (e) => {
+  //     e.preventDefault();
+  //   };
+  //   if (el) {
+  //     el.addEventListener("touchmove", handler);
+  //   }
+
+  //   return () => {
+  //     el?.removeEventListener("touchmove", handler);
+  //   };
+  // }, []);
 
   return (
-    <View onTouchMove={(e) => e.preventDefault()} style={{ height: "300rpx" }}>
+    <View style={{ height: "300rpx", width: "300px" }}>
       <View
         className="swiper-container"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
+        id="swiper-container"
+        catchMove
       >
-        {React.Children.map(cardList, (item, index) => {
+        {React.Children.map(children, (item, index) => {
           return React.cloneElement(item, {
             style: {
               color: "white",
+              ...initStyle(index),
             },
             ref: setSwiperItemRefs(index),
             sourceIndex: index,
+            currentIndex,
           });
         })}
       </View>

@@ -1,9 +1,10 @@
 export default defineAppConfig({
   pages: [
-    'pages/index/index',
+    // 'pages/index/index',
     'pages/swiper/index',
     // 'pages/fate/fate',
     'pages/webview/index',
+    'pages/datepicker/index',
   ],
   // entryPagePath: 'TestSub/Test/index',
   subPackages: [
