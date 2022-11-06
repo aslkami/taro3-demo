@@ -11,8 +11,9 @@ import {
   filterDateOptions,
   generateDateOptions,
   getCurrentTime,
-  typeList,
   generateMethodList,
+  isAllSame,
+  getTypeListIndex,
 } from "./utils";
 
 const { generateDay, generateMonth } = generateMethodList;
@@ -22,8 +23,9 @@ export type DatePickerProps = {
   rangeYear?: number;
   defautRenderUnit: string[];
   start?: string; // 2022-08-31
-  end?: string; // 2022-08-31
+  end?: string; // 2023-03-31
   current?: boolean;
+  initValue?: string;
 };
 
 export default function DatePicker(props: DatePickerProps) {
@@ -31,79 +33,112 @@ export default function DatePicker(props: DatePickerProps) {
     type = "Day",
     defautRenderUnit = ["年", "月", "日", "时", "分", "秒"],
     start = "2022-08-30",
-    end,
-    current = true,
+    // start,
+    end = "2024-03-20",
+    // end,
+    current = false,
     rangeYear = 10,
+    // initValue,
+    initValue = "2024-03-15",
   } = props;
   const [pickerValue, setPickerValue] = useState(() => {
-    const typeIndex = typeList.findIndex((tl) => tl === type);
+    const typeIndex = getTypeListIndex(type);
     return new Array(typeIndex + 1).fill(0).map(() => 0);
   });
-  console.log("pickerValue", pickerValue);
   const [dateOptions, setDateOptions] = useState<any[]>([]);
+  const latestChangeOptions = useRef<any[] | null>(null);
+  console.log("pickerValue", pickerValue, dateOptions);
 
   useEffect(() => {
     let opt = generateDateOptions({ type, range: rangeYear });
     if (start || end) {
-      opt = filterDateOptions({ options: opt, start, end });
+      opt = filterDateOptions({
+        options: opt,
+        start,
+        end,
+        current,
+        initValue,
+        type,
+      });
     }
+
     setDateOptions(opt);
 
-    if (current) {
-      setPickerValue(getCurrentTime(opt));
+    if (current || initValue) {
+      setPickerValue(getCurrentTime(opt, current ? undefined : initValue));
     }
-  }, [current, end, rangeYear, start, type]);
+  }, [current, end, initValue, rangeYear, start, type]);
 
   const onChange: CommonEventFunction<PickerViewProps.onChangeEventDetail> = (
     e
   ) => {
     const oldValue = pickerValue;
     const newValue = e.detail.value;
-    console.log(newValue, "==========");
-
-    regenerateYearOptions(oldValue, newValue);
+    regenerateMonthOptions(oldValue, newValue);
     regenerateDayOptions(oldValue, newValue);
     setPickerValue(newValue);
   };
 
-  const regenerateYearOptions = (oldValue, newValue) => {
-    if (start) {
-      const startDate = start.split("-");
-      if (oldValue[0] !== newValue[0]) {
-        let monthOptions = generateMonth();
-        const year = getValue(0, newValue[0]);
-        if (year === startDate[0]) {
+  const regenerateMonthOptions = (oldValue, newValue) => {
+    if (type === "Year") return;
+
+    if (oldValue[0] !== newValue[0]) {
+      let monthOptions = generateMonth();
+      const valueYear = getValue(0, [newValue[0]]);
+
+      if (start) {
+        const startDate = start.split("-");
+        if (startDate[0] === valueYear) {
           monthOptions = monthOptions.filter(
             (opt) => Number(opt) >= Number(startDate[1])
           );
         }
-        dateOptions[1] = monthOptions;
-        setDateOptions([...dateOptions]);
       }
-    } else if (end) {
-      const endDate = end.split("-");
-      if (oldValue[0] !== newValue[0]) {
-        let monthOptions = generateMonth();
-        const year = getValue(0, newValue[0]);
-        if (year === endDate[0]) {
+
+      if (end) {
+        const endDate = end.split("-");
+        if (endDate[0] === valueYear) {
+          let last = monthOptions;
           monthOptions = monthOptions.filter(
             (opt) => Number(opt) <= Number(endDate[1])
           );
+          monthOptions = monthOptions.length > 0 ? monthOptions : last;
         }
-        dateOptions[1] = monthOptions;
-        setDateOptions([...dateOptions]);
       }
+
+      dateOptions[1] = monthOptions;
+      setDateOptions([...dateOptions]);
+      latestChangeOptions.current = dateOptions;
     }
   };
 
   const regenerateDayOptions = (oldValue, newValue) => {
+    if (type === "Month" || type === "Year") return;
+
     if (oldValue[0] !== newValue[0] || oldValue[1] !== newValue[1]) {
-      const dayOptions = generateDay(
-        getValue(0, [newValue[0]]),
-        getValue(1, [newValue[1]])
-      );
+      const valueYear = getValue(0, [newValue[0]]);
+      const valueMonth = getValue(1, [newValue[1]]);
+      let dayOptions = generateDay(valueYear, valueMonth);
+
+      if (start) {
+        const startDate = start.split("-");
+        if (isAllSame([valueYear, valueMonth], startDate)) {
+          dayOptions = dayOptions.filter(
+            (d) => Number(d) >= Number(startDate[2])
+          );
+        }
+      }
+      if (end) {
+        const endDate = end.split("-");
+        if (isAllSame([valueYear, valueMonth], endDate)) {
+          dayOptions = dayOptions.filter(
+            (d) => Number(d) <= Number(endDate[2])
+          );
+        }
+      }
       dateOptions[2] = dayOptions;
       setDateOptions([...dateOptions]);
+      latestChangeOptions.current = dateOptions;
     }
   };
 
