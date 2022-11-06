@@ -41,6 +41,7 @@
     "@tarojs/react": "3.4.3",
     "@tarojs/runtime": "3.4.3",
     "@tarojs/taro": "3.4.3",
+    "classnames": "^2.3.2",
     "dayjs": "^1.11.6",
     "lodash.clonedeep": "^4.5.0",
     "moment": "^2.29.1",

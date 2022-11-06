@@ -161,7 +161,7 @@ export default function DatePicker(props: DatePickerProps) {
                   style={{
                     lineHeight: "50px",
                     textAlign: "center",
-                    // color: pickerValue[i] === idx ? "lightblue" : "#000",
+                    color: pickerValue[i] === idx ? "lightblue" : "#000",
                   }}
                   key={v}
                 >

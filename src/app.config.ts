@@ -5,6 +5,8 @@ export default defineAppConfig({
     // 'pages/fate/fate',
     'pages/webview/index',
     'pages/datepicker/index',
+    // 'pages/CircleProgressBar/index'
+    'pages/table/index'
   ],
   // entryPagePath: 'TestSub/Test/index',
   subPackages: [
