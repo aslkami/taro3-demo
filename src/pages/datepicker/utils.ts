@@ -92,16 +92,19 @@ function filterOptionsExec(
   filter = filter.slice(0, opt.length)
   filter.forEach((f, i) => {
     let value = opt[i] as string[];
+    let temp
 
     if (type === "limitStart") {
       // 生成的日期是根据当前月份的时间生成的，假设 当前是 11月有 30天， 但是 startDate 当月是 31 天，这样就有问题了
       if (i === 2) {
         value = generateDay(filter[0], filter[1]) // 根据开始时间重新生成时间
       }
-      opt[i] = value.filter((item) => Number(item) >= Number(f));
+      temp = value.filter((item) => Number(item) >= Number(f));
     } else {
-      opt[i] = value.filter((item) => Number(item) <= Number(f));
+      temp = value.filter((item) => Number(item) <= Number(f));
     }
+
+    opt[i] = temp.length > 0 ? temp : value
   });
 
   return opt;
@@ -194,7 +197,9 @@ export function filterDateOptions({
   } else {
     if (start) {
       opt = filterOptionsExec(opt, start.split("-"), "limitStart");
-    } else if (end) {
+    }
+
+    if (end) {
       opt = filterOptionsExec(opt, end.split("-"), "limitEnd");
     }
   }
