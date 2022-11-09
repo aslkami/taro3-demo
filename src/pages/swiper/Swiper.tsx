@@ -36,9 +36,13 @@ export default function Swiper({
   };
 
   const onTouchMove = (e) => {
-    // e.preventDefault();
     touch.move(e);
-    const delta = touch.getDelta().deltaX;
+    const { deltaX: delta, touchStartTime } = touch.getDelta();
+    if (new Date().getTime() - touchStartTime <= 100) {
+      console.log("小于100ms, 则不拖动");
+      return;
+    }
+
     if (delta < 0) {
       if (currentIndex === itemCount - 1) return;
       if (swipeDirection.current === "right") return;
@@ -51,19 +55,22 @@ export default function Swiper({
       swipeDirection.current = "right";
       const width = swiperItemRef[currentIndex - 1].getWidth();
       // const swiperDelta = delta >= width * 1.5 ? 0 : `calc(-150% + ${delta}px)`;
-      const swiperDelta = delta >= width * 1.5 ? 0 : -width + delta;
+      const swiperDelta = delta >= width * 1.5 ? 0 : -width * 1.5 + delta;
       swiperItemRef[currentIndex - 1].translatingX(swiperDelta);
     }
   };
 
   const onTouchEnd = () => {
     const { deltaX, deltaY } = touch.end();
-    if (Math.abs(deltaY) >= swiperOffset + 20) return;
+    // if (Math.abs(deltaY) >= swiperOffset + 20) return;
     // if (Math.abs(deltaX) <= swiperOffset) return;
 
-    swiperItemRef.forEach((ref) => {
-      ref.reset();
-    });
+    if (swipeDirection.current === "left") {
+      swiperItemRef[currentIndex].reset();
+    }
+    if (swipeDirection.current === "right") {
+      swiperItemRef[currentIndex - 1].reset();
+    }
 
     if (deltaX < 0) {
       if (currentIndex === itemCount - 1) return;
@@ -90,6 +97,7 @@ export default function Swiper({
 
   const onFinish = (index) => {
     setCurrentIndex(index);
+
     // swiperItemRef.forEach((ref) => {
     //   ref.clear();
     // });

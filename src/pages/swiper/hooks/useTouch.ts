@@ -18,14 +18,14 @@ const useTouch = () => {
   const start = (event: React.TouchEvent | TouchEvent) => {
     reset()
     time.current = new Date().getTime()
-    startX.current = event.touches[0].clientX
-    startY.current = event.touches[0].clientY
+    startX.current = event.changedTouches[0].clientX
+    startY.current = event.changedTouches[0].clientY
   }
 
   const move = (event: React.TouchEvent | TouchEvent) => {
     if (!time.current) return
-    deltaX.current = event.touches[0].clientX - startX.current
-    deltaY.current = event.touches[0].clientY - startY.current
+    deltaX.current = event.changedTouches[0].clientX - startX.current
+    deltaY.current = event.changedTouches[0].clientY - startY.current
   }
 
   const end = () => {
@@ -44,6 +44,7 @@ const useTouch = () => {
     return {
       deltaX: deltaX.current,
       deltaY: deltaY.current,
+      touchStartTime: time.current
     }
   }
 
