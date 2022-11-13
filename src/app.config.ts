@@ -6,7 +6,8 @@ export default defineAppConfig({
     'pages/webview/index',
     'pages/datepicker/index',
     // 'pages/CircleProgressBar/index'
-    'pages/table/index'
+    'pages/table/index',
+    'pages/EC_Canvas/index'
   ],
   // entryPagePath: 'TestSub/Test/index',
   subPackages: [
