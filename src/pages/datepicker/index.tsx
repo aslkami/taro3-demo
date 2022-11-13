@@ -34,19 +34,19 @@ export default function DatePicker(props: DatePickerProps) {
     defautRenderUnit = ["年", "月", "日", "时", "分", "秒"],
     start = "2022-08-30",
     // start,
-    end = "2024-03-20",
+    end = "2023-03-20",
     // end,
     current = false,
     rangeYear = 10,
-    // initValue,
-    initValue = "2024-03-15",
+    initValue,
+    // initValue = "2024-03-15",
   } = props;
   const [pickerValue, setPickerValue] = useState(() => {
     const typeIndex = getTypeListIndex(type);
     return new Array(typeIndex + 1).fill(0).map(() => 0);
   });
   const [dateOptions, setDateOptions] = useState<any[]>([]);
-  const latestChangeOptions = useRef<any[] | null>(null);
+  const latestChangeValue = useRef<any[] | null>(null);
   console.log("pickerValue", pickerValue, dateOptions);
 
   useEffect(() => {
@@ -74,12 +74,18 @@ export default function DatePicker(props: DatePickerProps) {
   ) => {
     const oldValue = pickerValue;
     const newValue = e.detail.value;
-    regenerateMonthOptions(oldValue, newValue);
-    regenerateDayOptions(oldValue, newValue);
-    setPickerValue(newValue);
+    let resetValue = newValue;
+    regenerateMonthOptions(oldValue, newValue, resetValue);
+    regenerateDayOptions(oldValue, newValue, resetValue);
+    latestChangeValue.current = resetValue;
+    Promise.resolve().then(() => {
+      setTimeout(() => {
+        setPickerValue(resetValue);
+      }, 0);
+    });
   };
 
-  const regenerateMonthOptions = (oldValue, newValue) => {
+  const regenerateMonthOptions = (oldValue, newValue, resetValue) => {
     if (type === "Year") return;
 
     if (oldValue[0] !== newValue[0]) {
@@ -106,13 +112,15 @@ export default function DatePicker(props: DatePickerProps) {
         }
       }
 
+      const valueMonth = getValue(1, [newValue[1]]);
+      const findRes = monthOptions.findIndex((item) => item === valueMonth);
       dateOptions[1] = monthOptions;
+      resetValue[1] = findRes > -1 ? findRes : 0;
       setDateOptions([...dateOptions]);
-      latestChangeOptions.current = dateOptions;
     }
   };
 
-  const regenerateDayOptions = (oldValue, newValue) => {
+  const regenerateDayOptions = (oldValue, newValue, resetValue) => {
     if (type === "Month" || type === "Year") return;
 
     if (oldValue[0] !== newValue[0] || oldValue[1] !== newValue[1]) {
@@ -136,9 +144,12 @@ export default function DatePicker(props: DatePickerProps) {
           );
         }
       }
+
+      const valueDay = getValue(2, [newValue[2]]);
+      const findRes = dayOptions.findIndex((item) => item === valueDay);
       dateOptions[2] = dayOptions;
+      resetValue[2] = findRes > -1 ? findRes : 0;
       setDateOptions([...dateOptions]);
-      latestChangeOptions.current = dateOptions;
     }
   };
 
@@ -151,6 +162,7 @@ export default function DatePicker(props: DatePickerProps) {
       indicatorStyle="height: 50px;"
       value={pickerValue}
       onChange={onChange}
+      immediateChange
     >
       {dateOptions.map((o, i) => {
         return (
@@ -161,7 +173,7 @@ export default function DatePicker(props: DatePickerProps) {
                   style={{
                     lineHeight: "50px",
                     textAlign: "center",
-                    color: pickerValue[i] === idx ? "lightblue" : "#000",
+                    color: pickerValue[i] === idx ? "red" : "#000",
                   }}
                   key={v}
                 >
